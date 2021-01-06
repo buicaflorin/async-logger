@@ -1,0 +1,62 @@
+/*
+MIT License
+
+Copyright (c) 2021 Florin Buica
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+#pragma once
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <map>
+#include <thread>
+#include <vector>
+#include <atomic>
+
+class Logger {
+
+public:
+    enum class Verbosity {
+        INFO,
+        WARNING,
+        ERROR,
+        FATAL
+    };
+    bool logMessage(enum Verbosity verbosity, const std::string& input);
+    Logger(uint32_t size, const std::string& filePath, bool timestamp);
+    ~Logger();
+
+private:
+
+    const std::map<Verbosity, std::string> verbosityStr = { {Verbosity::INFO, "INFO: "}, {Verbosity::WARNING, "WARNING: "},
+                                                            {Verbosity::ERROR, "ERROR: "}, {Verbosity::FATAL, "FATAL: "} };
+
+    std::atomic_ulong pushIndex;
+    uint32_t maxFileEntries;
+    bool logTimestamp;
+
+    std::ofstream* outFile;
+    std::thread worker;
+    std::atomic<bool> exitWorker;
+
+    std::vector<std::string>* entries;
+    static void workerThread(void* self);
+    uint64_t getTimestamp(void);
+};
