@@ -45,16 +45,16 @@ public:
 
 private:
 
-    const std::map<Verbosity, std::string> verbosityStr = { {Verbosity::INFO, "INFO: "}, {Verbosity::WARNING, "WARNING: "},
-                                                            {Verbosity::ERROR, "ERROR: "}, {Verbosity::FATAL, "FATAL: "} };
-
+    const std::map<Verbosity, std::string> verbosityStr = { {Verbosity::INFO, "INFO:    "}, {Verbosity::WARNING, "WARNING: "},
+                                                            {Verbosity::ERROR, "ERROR:   "}, {Verbosity::FATAL, "FATAL:   "} };
     std::atomic_ulong pushIndex;
-    uint32_t maxFileEntries;
+    const uint32_t MAX_LOG_SIZE = 100000U;
+    uint32_t requestedLogSlots;
     bool logTimestamp;
 
     std::ofstream* outFile;
     std::thread worker;
-    std::atomic<bool> exitWorker;
+    std::atomic<bool> exitWorkerSignal;
 
     std::vector<std::string>* entries;
     static void workerThread(void* self);
