@@ -48,6 +48,7 @@ private:
     const std::map<Verbosity, std::string> verbosityStr = { {Verbosity::INFO, "INFO:    "}, {Verbosity::WARNING, "WARNING: "},
                                                             {Verbosity::ERROR, "ERROR:   "}, {Verbosity::FATAL, "FATAL:   "} };
     std::atomic_ulong pushIndex;
+    std::atomic_ulong loggedEntries;
     const uint32_t MAX_LOG_SIZE = 100000U;
     uint32_t requestedLogSlots;
     bool logTimestamp;

@@ -61,7 +61,7 @@ int main()
     std::vector<std::thread> testThreads;
 
     std::shared_ptr<Logger> logger(new Logger(100, std::string("log.txt"), true));
-    workItems_t work = { logger, &testMessages, 0};
+    workItems_t work = { logger, &testMessages};
 
     int index;
     for (index = 0; index < TESTS_THREADS_NUMBER; index++) {

@@ -25,14 +25,19 @@ SOFTWARE.
 #include <async_logger.h>
 
 bool Logger::logMessage(enum Verbosity verbosity, const std::string& input) {
-    uint32_t tmp_index = this->pushIndex.fetch_add(1, std::memory_order_relaxed);
-    tmp_index = tmp_index % this->requestedLogSlots;
+    uint32_t tmpIndex = this->pushIndex.fetch_add(1, std::memory_order_relaxed);
 
+    //check for ring buffer overflow
+    if(tmpIndex > (this->loggedEntries + this->requestedLogSlots)){
+        std::cerr << "Log buffer is full! Consider increasing its size.\n";
+        return false;
+    }
+    tmpIndex = tmpIndex % this->requestedLogSlots;
     if (this->logTimestamp) {
-        this->entries->at(tmp_index) = this->verbosityStr.at(verbosity) + std::to_string(this->getTimestamp()) + " " + input + '\n';
+        this->entries->at(tmpIndex) = this->verbosityStr.at(verbosity) + std::to_string(this->getTimestamp()) + " " + input + '\n';
     }
     else {
-        this->entries->at(tmp_index) = this->verbosityStr.at(verbosity) + input + '\n';
+        this->entries->at(tmpIndex) = this->verbosityStr.at(verbosity) + input + '\n';
     }
     return true;
 }
@@ -44,12 +49,12 @@ uint64_t Logger::getTimestamp(void) {
 void Logger::workerThread(void* self) {
     Logger* owner = (Logger*)self;
     uint32_t currentWriteIndex = 0;
-    uint32_t loggedEntries = 0;
-    while ((false == owner->exitWorkerSignal) || (loggedEntries != owner->pushIndex)) {
+    owner->loggedEntries = 0;
+    while ((false == owner->exitWorkerSignal) || (owner->loggedEntries != owner->pushIndex)) {
         if (owner->pushIndex) {
-            while (loggedEntries < owner->pushIndex) {
-                *owner->outFile << owner->entries->at(loggedEntries % owner->requestedLogSlots);
-                loggedEntries++;
+            while (owner->loggedEntries < owner->pushIndex) {
+                *owner->outFile << owner->entries->at(owner->loggedEntries % owner->requestedLogSlots);
+                owner->loggedEntries++;
             }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -72,6 +77,7 @@ Logger::Logger(uint32_t size, const std::string& filePath, bool timestamp) {
         throw std::runtime_error("Failed to create log file.");
     }
     this->pushIndex = std::atomic_int(0);
+    this->loggedEntries = std::atomic_int(0);
     this->exitWorkerSignal = false;
     this->worker = std::thread(&Logger::workerThread, (void*)this);
 }
